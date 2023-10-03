@@ -3,21 +3,21 @@ import bcrypt from 'bcryptjs'
 import  jwt  from "jsonwebtoken"
 import {sendEmail} from '../../../services/email.js'
 import { nanoid } from "nanoid"
+import moment from "moment"
 export const signup=async(req,res)=>{
-    try{
-            const {passward,userName,email}=req.body
-            const user=await userModel.findOne({email:email})
-
-            if(user){
-                res.status(409).json('email exist')
-            }
-            else{
-                const hash=bcrypt.hashSync(passward,parseInt(process.env.SaltRound))  ///شفرته 
-                const newUser=await userModel({userName,email,passward:hash}) // خزنت الداتا في متغير
-                let token=jwt.sign({id:newUser._id},process.env.ConfirmEmailToken,{expiresIn:'1h'}) // عملت توكن
+  try{
+      const {passward,userName,email}=req.body
+      const user=await userModel.findOne({email:email})
+      if(user){
+          res.status(409).json('email exist')
+      }
+      else{
+          const hash=bcrypt.hashSync(passward,parseInt(process.env.SaltRound))  ///شفرته 
+          const newUser=await userModel({userName,email,passward:hash}) // خزنت الداتا في متغير
+          let token=jwt.sign({id:newUser._id},process.env.ConfirmEmailToken,{expiresIn:'1h'}) // عملت توكن
                 // let link=`${req.protocol}:/${req.headers.host}${process.env.BASEURL}auth/confirmEmail/${token}`
                 // res.json(link)
-                let message=`<!DOCTYPE html>
+          let message=`<!DOCTYPE html>
                 <html>
                 <head>
                 
@@ -276,15 +276,15 @@ export const signup=async(req,res)=>{
                   <!-- end body -->
                 
                 </body>
-                </html>`
-                const inf=await sendEmail(email,'verify Email',message)
-                if(inf.accepted.length){ // اذا وصلت الرسالة
-                    const saveUser=await newUser.save()
-                    return res.status(200).json({message:'sucess',saveUser})
-                }else{
-                    return res.stauts(404).json('fail signup')
-                }
-            }
+          </html>`
+          const inf=await sendEmail(email,'verify Email',message)
+          if(inf.accepted.length){ // اذا وصلت الرسالة
+              const saveUser=await newUser.save()
+              return res.status(200).json({message:'sucess',saveUser})
+          }else{
+              return res.status(404).json('fail signup')
+          }
+          }
     }catch(error){
         res.status(400).json({message:`catch error ${error}`})
     }
@@ -316,12 +316,14 @@ export const signin=async(req,res)=>{
             return res.status(404).json({message:'go to sign up please'})
         }else{
             if(!findUser.confirmEmail){
-               return res.stauts(400).json({message:'confirm email please'})
+               return res.status(400).json({message:'confirm email please'})
             }
             const match=bcrypt.compare(passward,findUser.passward)
             if(!match){
                return res.status(400).json({message:'invaild passward'})
             }
+            const now=moment()
+            const user=await userModel.findByIdAndUpdate(findUser.id,{lastOpenDate:now})
             const token =jwt.sign({id:findUser._id},process.env.TokenSignIn,{expiresIn:60 *60 *24})
             return res.status(200).json({message:"sucess sign in",token})
         }
@@ -334,7 +336,7 @@ export const forgetPassward=async(req,res)=>{
   try{
       const {code,email,newPassward}=req.body;
       if(code==null){
-        return res.stauts(400).json({message:'enter code please'})
+        return res.status(400).json({message:'enter code please'})
       }
       else{
           const hash=bcrypt.hashSync(newPassward,parseInt(process.env.SaltRound))
@@ -369,3 +371,4 @@ export const sendCode=async(req,res)=>{
     
 
 }
+

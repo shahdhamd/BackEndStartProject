@@ -1,5 +1,6 @@
 import {Types,Schema, model } from "mongoose";
-
+import moment from 'moment';
+let now=moment()
  const userSchema=new Schema({
     userName:{
         type:String,
@@ -28,7 +29,12 @@ import {Types,Schema, model } from "mongoose";
     sendCode:{
         type:String,
         default:null
-    }
+    },
+    lastOpenDate: {
+        type:Date,
+        default:now
+    },
+    image:String
 
 },{timestamps:true})
 
